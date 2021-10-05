@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Measure Memory Demo</title>
+  </head>
+  <body>
+    <div id="root">
+      <div>
+        <button id="measure">Measure Memory</button>
+      </div>
+      <textarea id="measure-result"></textarea>
+    </div>
+    <script>
+      let $measure = document.getElementById('measure');
+      let $measureResult = document.getElementById('measure-result');
+
+      let measuring = false;
+      $measure.addEventListener('click', async () => {
+        if (!measuring) {
+          console.time('measuring');
+          measuring = true;
+          $measure.textContent = 'Measuring...';
+          $measure.disabled = true;
+
+          const result = await performance.measureUserAgentSpecificMemory();
+
+          console.timeEnd('measuring');
+          measuring = false;
+          $measure.textContent = 'Measure Memory';
+          $measure.disabled = false;
+
+          $measureResult.value = JSON.stringify(result, null, 2);
+        }
+      });
+    </script>
+  </body>
+</html>
