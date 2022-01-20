@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Partytown Playground</title>
+    <script type="module">
+      import { partytownSnippet } from '/node_modules/@builder.io/partytown/integration/index.mjs';
+
+      window.partytown = {
+        debug: true,
+        lib: '/node_modules/@builder.io/partytown/lib/',
+        logCalls: true,
+        logGetters: true,
+        logSetters: true,
+        logImageRequests: true,
+        logScriptExecution: true,
+        logSendBeaconRequest: true,
+        logStackTraces: true,
+      };
+
+      const snippet = partytownSnippet(window.partytown);
+
+      const script = document.createElement('script');
+      script.innerHTML = snippet;
+
+      document.body.appendChild(script);
+    </script>
+  </head>
+  <body>
+    <script type="text/partytown" src="/third-party.js" async defer></script>
+  </body>
+</html>
