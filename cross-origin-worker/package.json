@@ -1,0 +1,10 @@
+{
+  "name": "cross-origin-worker",
+  "scripts": {
+    "start:parent": "serve-isolated --port 8000",
+    "start:child": "serve-isolated --port 9000 child"
+  },
+  "devDependencies": {
+    "serve-isolated": "^1.2.0"
+  }
+}

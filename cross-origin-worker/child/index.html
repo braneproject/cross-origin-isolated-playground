@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Child Frame</title>
+  </head>
+  <body>
+    <div>Test</div>
+    <script type="module">
+      console.log('Hello from child frame', location.origin);
+
+      window.addEventListener('message', e => {
+        let [channel2Port, channel3Port] = e.ports;
+        if (channel2Port) {
+          console.log('channel 2 initialized');
+        }
+
+        channel2Port.onmessage = (message) => {
+          channel2Port.postMessage({ id: message.data.id });
+        };
+
+        let worker = new Worker('worker.mjs', {
+          type: 'module',
+        });
+        worker.postMessage('init', [channel3Port]);
+      }, false);
+    </script>
+  </body>
+</html>

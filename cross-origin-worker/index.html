@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cross Origin Ping-Pong Test</title>
+  </head>
+  <body>
+    <div id="root">
+      <iframe id="child" src="http://localhost:9000" style="display: none;"></iframe>
+    </div>
+    <script type="module">
+      import { Bench } from 'https://esm.sh/tinybench';
+      import { defer, timeout } from 'https://esm.sh/@cometjs/core';
+
+      let $child = document.getElementById('child');
+
+      let cache1 = {};
+      let channel1 = new MessageChannel();
+      channel1.port1.onmessage = (message) => {
+        cache1[message.data.id]?.resolve('pong');
+      };
+
+      let cache2 = {};
+      let channel2 = new MessageChannel();
+      channel2.port1.onmessage = (message) => {
+        cache2[message.data.id]?.resolve('pong');
+      };
+
+      let cache3 = {};
+      let channel3 = new MessageChannel();
+      channel3.port1.onmessage = (message) => {
+        cache3[message.data.id]?.resolve('pong');
+      };
+
+      $child.contentWindow.postMessage('init', 'http://localhost:9000', [channel2.port2, channel3.port2]);
+
+      async function ping1() {
+        let reqId = Math.random();
+        let deferred = defer();
+        cache1[reqId] = deferred;
+        channel1.port2.postMessage({ id: reqId });
+        const result = await deferred;
+        delete cache1[reqId];
+        return result;
+      }
+
+      async function ping2() {
+        let reqId = Math.random();
+        let deferred = defer();
+        cache2[reqId] = deferred;
+        channel2.port1.postMessage({ id: reqId });
+        const result = await deferred;
+        delete cache2[reqId];
+        return result;
+      }
+
+      async function ping3() {
+        let reqId = Math.random();
+        let deferred = defer();
+        cache3[reqId] = deferred;
+        channel3.port1.postMessage({ id: reqId });
+        const result = await deferred;
+        delete cache3[reqId];
+        return result;
+      }
+
+      let bench = new Bench({ time: 100 })
+        .add('ping1 - parent <-> parent', async () => {
+          await ping1();
+        })
+        .add('ping2 - parent <-> cross-origin iframe', async () => {
+          await ping2();
+        })
+        .add('ping3 - parent <-> cross-origin worker ', async () => {
+          await ping3();
+        });
+
+      await bench.warmup();
+      await bench.run();
+      console.table(
+        bench.tasks.map(({ name, result }) => ({
+          'Task Name': name,
+          'Average Time (ps)': result?.mean * 1000,
+          'Variance (ps)': result?.variance * 1000,
+        })),
+      );
+
+    </script>
+  </body>
+</html>
