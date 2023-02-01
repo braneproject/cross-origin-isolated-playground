@@ -17,7 +17,7 @@
         }
 
         channel2Port.onmessage = (message) => {
-          channel2Port.postMessage({ id: message.data.id });
+          channel2Port.postMessage({ id: message.data.id, complex: message.data.complex });
         };
 
         let worker = new Worker('worker.mjs', {

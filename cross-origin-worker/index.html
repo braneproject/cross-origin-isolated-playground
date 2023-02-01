@@ -65,7 +65,7 @@
         return result;
       }
 
-      let bench = new Bench({ time: 100 })
+      let bench1 = new Bench({ time: 100 })
         .add('ping1 - parent <-> parent', async () => {
           await ping1();
         })
@@ -76,16 +76,105 @@
           await ping3();
         });
 
-      await bench.warmup();
-      await bench.run();
+      await bench1.warmup();
+      await bench1.run();
       console.table(
-        bench.tasks.map(({ name, result }) => ({
+        bench1.tasks.map(({ name, result }) => ({
           'Task Name': name,
           'Average Time (ps)': result?.mean * 1000,
           'Variance (ps)': result?.variance * 1000,
         })),
       );
 
+
+      let complex = {
+        'int': 1,
+        'float': 0.5,
+        'boolean': true,
+        'null': null,
+        'string': 'foo bar',
+        'array': [
+          'foo',
+          'bar',
+        ],
+        'object': {
+          'foo': 1,
+          'baz': 0.5,
+        },
+        'date': new Date(1626881119799),
+      };
+
+      async function heavyPing1() {
+        let reqId = Math.random();
+        let deferred = defer();
+        cache1[reqId] = deferred;
+        channel1.port2.postMessage({ id: reqId, complex });
+        const result = await deferred;
+        delete cache1[reqId];
+        return result;
+      }
+
+      async function heavyPing2() {
+        let reqId = Math.random();
+        let deferred = defer();
+        cache2[reqId] = deferred;
+        channel2.port1.postMessage({ id: reqId, complex });
+        const result = await deferred;
+        delete cache2[reqId];
+        return result;
+      }
+
+      async function heavyPing3() {
+        let reqId = Math.random();
+        let deferred = defer();
+        cache3[reqId] = deferred;
+        channel3.port1.postMessage({ id: reqId, complex });
+        const result = await deferred;
+        delete cache3[reqId];
+        return result;
+      }
+
+      let bench2 = new Bench({ time: 100 })
+        .add('heavyPing1 - parent <-> parent', async () => {
+          await heavyPing1();
+        })
+        .add('heavyPing2 - parent <-> cross-origin iframe', async () => {
+          await heavyPing2();
+        })
+        .add('heavyPing3 - parent <-> cross-origin worker ', async () => {
+          await heavyPing3();
+        });
+
+      await bench2.warmup();
+      await bench2.run();
+      console.table(
+        bench2.tasks.map(({ name, result }) => ({
+          'Task Name': name,
+          'Average Time (ps)': result?.mean * 1000,
+          'Variance (ps)': result?.variance * 1000,
+        })),
+      );
+
+      let bench3 = new Bench({ time: 100 })
+        .add('concurrentPing1 - parent <-> parent', async () => {
+          await Promise.all(Array(100).fill().map(() => heavyPing1()));
+        })
+        .add('concurrentPing2 - parent <-> cross-origin iframe', async () => {
+          await Promise.all(Array(100).fill().map(() => heavyPing2()));
+        })
+        .add('concurrentPing3 - parent <-> cross-origin worker ', async () => {
+          await Promise.all(Array(100).fill().map(() => heavyPing3()));
+        });
+
+      await bench3.warmup();
+      await bench3.run();
+      console.table(
+        bench3.tasks.map(({ name, result }) => ({
+          'Task Name': name,
+          'Average Time (ps)': result?.mean * 1000,
+          'Variance (ps)': result?.variance * 1000,
+        })),
+      );
     </script>
   </body>
 </html>

@@ -8,6 +8,6 @@ self.addEventListener('message', e => {
   }
 
   channel3Port.onmessage = message => {
-    channel3Port.postMessage({ id: message.data.id });
+    channel3Port.postMessage({ id: message.data.id, complex: message.data.complex });
   };
 });
