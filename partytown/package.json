@@ -2,7 +2,11 @@
   "name": "partytown",
   "version": "0.0.0",
   "private": true,
+  "scripts": {
+    "start": "serve-isolated"
+  },
   "devDependencies": {
-    "@builder.io/partytown": "^0.2.1"
+    "@builder.io/partytown": "^0.7.5",
+    "serve-isolated": "^1.2.0"
   }
 }

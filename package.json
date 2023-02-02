@@ -2,11 +2,5 @@
   "name": "cross-origin-isolated-playground",
   "version": "0.0.0",
   "private": true,
-  "license": "MIT",
-  "scripts": {
-    "demo": "serve-isolated"
-  },
-  "devDependencies": {
-    "serve-isolated": "^1.0.1"
-  }
+  "license": "MIT"
 }
