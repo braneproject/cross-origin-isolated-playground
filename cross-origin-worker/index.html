@@ -15,65 +15,88 @@
 
       let $child = document.getElementById('child');
 
-      let cache1 = {};
+      let cache1 = new Map();
       let channel1 = new MessageChannel();
       channel1.port1.onmessage = (message) => {
-        cache1[message.data.id]?.resolve('pong');
+        cache1.get(message.data.id)?.resolve('pong');
       };
 
-      let cache2 = {};
+      let cache2 = new Map();
       let channel2 = new MessageChannel();
       channel2.port1.onmessage = (message) => {
-        cache2[message.data.id]?.resolve('pong');
+        cache2.get(message.data.id)?.resolve('pong');
       };
 
-      let cache3 = {};
+      let cache3 = new Map();
       let channel3 = new MessageChannel();
       channel3.port1.onmessage = (message) => {
-        cache3[message.data.id]?.resolve('pong');
+        cache3.get(message.data.id)?.resolve('pong');
       };
 
-      $child.contentWindow.postMessage('init', 'http://localhost:9000', [channel2.port2, channel3.port2]);
+      let cache4 = new Map();
+      let channel4 = new MessageChannel();
+      channel4.port1.onmessage = (message) => {
+        cache4.get(message.data.id)?.resolve('pong');
+      };
 
-      async function ping1() {
-        let reqId = Math.random();
+      $child.contentWindow.postMessage('init', 'http://localhost:9000', [channel2.port2, channel3.port2, channel4.port2]);
+
+      let seq1 = 0;
+      async function echo1(message = null) {
+        let reqId = seq++;
         let deferred = defer();
-        cache1[reqId] = deferred;
-        channel1.port2.postMessage({ id: reqId });
+        cache1.set(reqId, deferred);
+        channel1.port2.postMessage({ id: reqId, message });
         const result = await deferred;
-        delete cache1[reqId];
+        cache1.delete(reqId);
         return result;
       }
 
-      async function ping2() {
-        let reqId = Math.random();
+      let seq2 = 0;
+      async function echo2(message = null) {
+        let reqId = seq2++;
         let deferred = defer();
-        cache2[reqId] = deferred;
-        channel2.port1.postMessage({ id: reqId });
+        cache2.set(reqId, deferred);
+        channel2.port1.postMessage({ id: reqId, message });
         const result = await deferred;
-        delete cache2[reqId];
+        cache2.delete(reqId);
         return result;
       }
 
-      async function ping3() {
-        let reqId = Math.random();
+      let seq3 = 0;
+      async function echo3(message = null) {
+        let reqId = seq3++;
         let deferred = defer();
-        cache3[reqId] = deferred;
-        channel3.port1.postMessage({ id: reqId });
+        cache3.set(reqId, deferred);
+        channel3.port1.postMessage({ id: reqId, message });
         const result = await deferred;
-        delete cache3[reqId];
+        cache3.delete(reqId);
+        return result;
+      }
+
+      let seq4 = 0;
+      async function echo4(message = null) {
+        let reqId = seq4++;
+        let deferred = defer();
+        cache4.set(reqId, deferred);
+        channel4.port1.postMessage({ id: reqId, message });
+        const result = await deferred;
+        cache4.delete(reqId);
         return result;
       }
 
       let bench1 = new Bench({ time: 100 })
-        .add('ping1 - parent <-> parent', async () => {
-          await ping1();
+        .add('echo1(): parent <-> parent', async () => {
+          await echo1();
         })
-        .add('ping2 - parent <-> cross-origin iframe', async () => {
-          await ping2();
+        .add('echo2(): parent <-> cross-origin iframe', async () => {
+          await echo2();
         })
-        .add('ping3 - parent <-> cross-origin worker ', async () => {
-          await ping3();
+        .add('echo3(): parent <-> cross-origin worker', async () => {
+          await echo3();
+        })
+        .add('echo4(): parent <-> cross-origin iframe (relay) <-> worker', async () => {
+          await echo4();
         });
 
       await bench1.warmup();
@@ -85,7 +108,6 @@
           'Variance (ps)': result?.variance * 1000,
         })),
       );
-
 
       let complex = {
         'int': 1,
@@ -104,45 +126,18 @@
         'date': new Date(1626881119799),
       };
 
-      async function heavyPing1() {
-        let reqId = Math.random();
-        let deferred = defer();
-        cache1[reqId] = deferred;
-        channel1.port2.postMessage({ id: reqId, complex });
-        const result = await deferred;
-        delete cache1[reqId];
-        return result;
-      }
-
-      async function heavyPing2() {
-        let reqId = Math.random();
-        let deferred = defer();
-        cache2[reqId] = deferred;
-        channel2.port1.postMessage({ id: reqId, complex });
-        const result = await deferred;
-        delete cache2[reqId];
-        return result;
-      }
-
-      async function heavyPing3() {
-        let reqId = Math.random();
-        let deferred = defer();
-        cache3[reqId] = deferred;
-        channel3.port1.postMessage({ id: reqId, complex });
-        const result = await deferred;
-        delete cache3[reqId];
-        return result;
-      }
-
       let bench2 = new Bench({ time: 100 })
-        .add('heavyPing1 - parent <-> parent', async () => {
-          await heavyPing1();
+        .add('echo1(complex): parent <-> parent', async () => {
+          await echo1(complex);
         })
-        .add('heavyPing2 - parent <-> cross-origin iframe', async () => {
-          await heavyPing2();
+        .add('echo2(complex): parent <-> cross-origin iframe', async () => {
+          await echo2(complex);
         })
-        .add('heavyPing3 - parent <-> cross-origin worker ', async () => {
-          await heavyPing3();
+        .add('echo3(complex): parent <-> cross-origin worker', async () => {
+          await echo3(complex);
+        })
+        .add('echo4(complex): parent <-> cross-origin iframe (relay) <-> worker', async () => {
+          await echo4(complex);
         });
 
       await bench2.warmup();
@@ -156,14 +151,17 @@
       );
 
       let bench3 = new Bench({ time: 100 })
-        .add('concurrentPing1 - parent <-> parent', async () => {
-          await Promise.all(Array(100).fill().map(() => heavyPing1()));
+        .add('echo1(complex) x100: parent <-> parent', async () => {
+          await Promise.all(Array(100).fill().map(() => echo1(complex)));
         })
-        .add('concurrentPing2 - parent <-> cross-origin iframe', async () => {
-          await Promise.all(Array(100).fill().map(() => heavyPing2()));
+        .add('echo2(complex) x100: parent <-> cross-origin iframe', async () => {
+          await Promise.all(Array(100).fill().map(() => echo2(complex)));
         })
-        .add('concurrentPing3 - parent <-> cross-origin worker ', async () => {
-          await Promise.all(Array(100).fill().map(() => heavyPing3()));
+        .add('echo3(complex) x100: parent <-> cross-origin worker', async () => {
+          await Promise.all(Array(100).fill().map(() => echo3(complex)));
+        })
+        .add('echo4(complex) x100: parent <-> cross-origin iframe (relay) <-> worker', async () => {
+          await Promise.all(Array(100).fill().map(() => echo4(complex)));
         });
 
       await bench3.warmup();

@@ -11,19 +11,22 @@
       console.log('Hello from child frame', location.origin);
 
       window.addEventListener('message', e => {
-        let [channel2Port, channel3Port] = e.ports;
+        let [channel2Port, channel3Port, channel4Port] = e.ports;
         if (channel2Port) {
           console.log('channel 2 initialized');
         }
 
         channel2Port.onmessage = (message) => {
-          channel2Port.postMessage({ id: message.data.id, complex: message.data.complex });
+          channel2Port.postMessage(structuredClone(message.data));
         };
 
-        let worker = new Worker('worker.mjs', {
-          type: 'module',
-        });
-        worker.postMessage('init', [channel3Port]);
+        let relayChannel = new MessageChannel();
+        relayChannel.port1.onmessage = channel4Port.onmessage = (message) => {
+          channel4Port.postMessage(structuredClone(message.data));
+        };
+
+        let worker = new Worker('worker.mjs', { type: 'module' });
+        worker.postMessage('init', [channel3Port, relayChannel.port2]);
       }, false);
     </script>
   </body>
