@@ -1,10 +1,13 @@
 {
   "name": "cross-origin-worker",
+  "private": true,
   "scripts": {
     "start:parent": "serve-isolated --port 8000",
-    "start:child": "serve-isolated --port 9000 child"
+    "start:child": "serve-isolated --port 9000"
   },
-  "devDependencies": {
-    "serve-isolated": "^1.2.0"
+  "dependencies": {
+    "@cometjs/core": "^2.3.1",
+    "serve-isolated": "^1.2.0",
+    "tinybench": "^2.5.0"
   }
 }

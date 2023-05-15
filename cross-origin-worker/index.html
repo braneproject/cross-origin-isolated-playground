@@ -7,11 +7,19 @@
   </head>
   <body>
     <div id="root">
-      <iframe id="child" src="http://localhost:9000" style="display: none;"></iframe>
+      <iframe id="child" src="http://localhost:9000/child.html"></iframe>
     </div>
+    <script type="importmap">
+      {
+        "imports": {
+          "@cometjs/core": "/node_modules/@cometjs/core/lib/index.mjs",
+          "tinybench": "/node_modules/tinybench/dist/index.js"
+        }
+      }
+    </script>
     <script type="module">
-      import { Bench } from 'https://esm.sh/tinybench';
-      import { defer, timeout } from 'https://esm.sh/@cometjs/core';
+      import { Bench } from 'tinybench';
+      import { defer, timeout } from '@cometjs/core';
 
       let $child = document.getElementById('child');
 
@@ -39,7 +47,9 @@
         cache4.get(message.data.id)?.resolve('pong');
       };
 
-      $child.contentWindow.postMessage('init', 'http://localhost:9000', [channel2.port2, channel3.port2, channel4.port2]);
+      window.onload = () => {
+        $child.contentWindow.postMessage('init', 'http://localhost:9000', [channel2.port2, channel3.port2, channel4.port2]);
+      };
 
       let seq1 = 0;
       async function echo1(message = null) {
@@ -101,13 +111,7 @@
 
       await bench1.warmup();
       await bench1.run();
-      console.table(
-        bench1.tasks.map(({ name, result }) => ({
-          'Task Name': name,
-          'Average Time (ps)': result?.mean * 1000,
-          'Variance (ps)': result?.variance * 1000,
-        })),
-      );
+      console.table(bench1.table());
 
       let complex = {
         'int': 1,
@@ -142,13 +146,7 @@
 
       await bench2.warmup();
       await bench2.run();
-      console.table(
-        bench2.tasks.map(({ name, result }) => ({
-          'Task Name': name,
-          'Average Time (ps)': result?.mean * 1000,
-          'Variance (ps)': result?.variance * 1000,
-        })),
-      );
+      console.table(bench2.table());
 
       let bench3 = new Bench({ time: 100 })
         .add('echo1(complex) x100: parent <-> parent', async () => {
@@ -166,13 +164,7 @@
 
       await bench3.warmup();
       await bench3.run();
-      console.table(
-        bench3.tasks.map(({ name, result }) => ({
-          'Task Name': name,
-          'Average Time (ps)': result?.mean * 1000,
-          'Variance (ps)': result?.variance * 1000,
-        })),
-      );
+      console.table(bench3.table());
     </script>
   </body>
 </html>

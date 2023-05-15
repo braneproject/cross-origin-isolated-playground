@@ -25,7 +25,7 @@
           channel4Port.postMessage(structuredClone(message.data));
         };
 
-        let worker = new Worker('worker.mjs', { type: 'module' });
+        let worker = new Worker('worker.js', { type: 'module' });
         worker.postMessage('init', [channel3Port, relayChannel.port2]);
       }, false);
     </script>
