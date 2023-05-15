@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Child Frame</title>
+  </head>
+  <body>
+    <div>Test</div>
+    <script type="module">
+      console.log('Hello from child frame', location.origin);
+
+      let worker = new Worker('worker.js', { type: 'module' });
+
+      window.addEventListener('message', e => {
+        let [port] = e.ports;
+        if (port) {
+          worker.postMessage('init', [port]);
+        }
+      }, false);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "atomics-benchmark",
+  "private": true,
+  "scripts": {
+    "start:parent": "serve-isolated --port 8000",
+    "start:child": "serve-isolated --port 9000"
+  },
+  "dependencies": {
+    "@cometjs/core": "^2.3.1",
+    "cbor-x": "^1.5.2",
+    "serve-isolated": "^1.2.0",
+    "tinybench": "^2.5.0"
+  }
+}

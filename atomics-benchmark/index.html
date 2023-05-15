@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Atomics Throughput Benchmark</title>
+  </head>
+  <body>
+    <div id="root">
+      <iframe id="child" src="http://localhost:9000/child.html"></iframe>
+
+      <div id="target" style="width: 100px; height: 100px; background-color: gray;">
+        Sized Box
+      </div>
+    </div>
+    <script type="module">
+      import * as CBOR from '/node_modules/cbor-x/index.js';
+
+      let $child = document.getElementById('child');
+      let $target = document.getElementById('target');
+      let channel = new MessageChannel();
+      let sab = new SharedArrayBuffer(4 * 1024);
+      let accessor = new Int32Array(sab);
+      let binaryView = new Uint8Array(sab);
+
+      channel.port1.onmessage = e => {
+        if (e.data.type === 'sab') {
+          channel.port1.postMessage({ sab });
+          return;
+        }
+
+        if (e.data.type === 'requestViaPort') {
+          let reqId = e.data.reqId;
+          let result = $target.getBoundingClientRect().toJSON();
+          channel.port1.postMessage({ type: 'resolve', reqId, result });
+          return;
+        }
+
+        if (e.data.type === 'requestViaSAB_structured') {
+          let result = $target.getBoundingClientRect();
+          accessor[0] = result.x;
+          accessor[1] = result.y;
+          accessor[2] = result.width;
+          accessor[3] = result.height;
+          accessor[4] = result.left;
+          accessor[5] = result.right;
+          accessor[6] = result.top;
+          accessor[7] = result.bottom;
+          Atomics.notify(accessor, 0);
+        }
+        
+        if (e.data.type === 'requestViaSAB_CBOR') {
+          let result = $target.getBoundingClientRect().toJSON();
+          let binary = CBOR.encode(result);
+          let binaryLength = binary.length;
+          binaryView[0] = binaryLength;
+          for (let i = 0, len = binary.length; i < len; ++i) {
+            binaryView[i + 1] = binary[i];
+          }
+          Atomics.notify(accessor, 0);
+          return;
+        }
+      };
+
+      window.onload = () => {
+        $child.contentWindow.postMessage('init', 'http://localhost:9000', [channel.port2]);
+      };
+    </script>
+  </body>
+</html>
