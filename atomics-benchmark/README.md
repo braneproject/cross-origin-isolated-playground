@@ -4,9 +4,9 @@ Test the throughput of requesting structured data from a worker thread to the ho
 
 1. `port_port__structured`: Request to the main thread via [`MessagePort`], and sync the result via the same `MessagePort`. Use the standard [structured clone](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm) algorithm for data serialization/deserialization.
 2. `port_sab__custom`: Request to the main thread via [`MessagePort`], and sync the result via [`SharedArrayBuffer`] and [`Atomics.wait`]. Use hand-written data seriallization/deserialization.
-3. `port_sab__cbor`: Request to the main tread via [`MessagePort`], and sync the result via [`SharedArrayBuffer`] and [`Atomics.wait`]. Use [CBOR] for data serialization/deserialization.
-4. `sab_sab__custom`: Request to the main trhead via [`SharedArrayBuffer`], blocked by [`Atomics.waitAsync`] loop, and sync the result via the same [`SharedArrayBuffer`] and [`Atomics.wait`]. Use hand-written data serialization/deserialization.
-5. `sab_sab__cbor`: Request to the main trhead via [`SharedArrayBuffer`], blocked by [`Atomics.waitAsync`] loop, and sync the result via the same [`SharedArrayBuffer`] and [`Atomics.wait`]. Use [CBOR] for data serialization/deserialization.
+3. `port_sab__cbor`: Request to the main trhead via [`MessagePort`], and sync the result via [`SharedArrayBuffer`] and [`Atomics.wait`]. Use [CBOR] for data serialization/deserialization.
+4. `sab_sab__custom`: Request to the main thread via [`SharedArrayBuffer`], blocked by [`Atomics.waitAsync`] loop, and sync the result via the same [`SharedArrayBuffer`] and [`Atomics.wait`]. Use hand-written data serialization/deserialization.
+5. `sab_sab__cbor`: Request to the main thread via [`SharedArrayBuffer`], blocked by [`Atomics.waitAsync`] loop, and sync the result via the same [`SharedArrayBuffer`] and [`Atomics.wait`]. Use [CBOR] for data serialization/deserialization.
 
 ## Result
 
