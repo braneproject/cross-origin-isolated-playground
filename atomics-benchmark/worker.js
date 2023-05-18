@@ -31,57 +31,105 @@ async function benchmark(port, sab) {
     }
   };
 
-  async function requestViaPort() {
+  async function port_port__structured() {
     let reqId = seq++;
     let deferred = defer();
     cache.set(reqId, deferred);
-    port.postMessage({ type: 'requestViaPort', reqId });
+    port.postMessage({ type: 'port_port__structured', reqId });
     let result = await deferred;
     cache.delete(reqId);
     return result;
   }
 
-  function requestViaSAB_structured() {
+  function port_sab__custom() {
     Atomics.store(accessor, 0, 0);
-    port.postMessage({ type: 'requestViaSAB_structured' });
+    port.postMessage({ type: 'port_sab__custom' });
     Atomics.wait(accessor, 0, 0);
     return {
-      x: accessor[0],
-      y: accessor[1],
-      width: accessor[2],
-      height: accessor[3],
-      left: accessor[4],
-      right: accessor[5],
-      top: accessor[6],
-      bottom: accessor[7],
+      x: accessor[1],
+      y: accessor[2],
+      width: accessor[3],
+      height: accessor[4],
+      left: accessor[5],
+      right: accessor[6],
+      top: accessor[7],
+      bottom: accessor[8],
     };
   }
 
-  function requestViaSAB_CBOR() {
+  function port_sab__cbor() {
     Atomics.store(accessor, 0, 0);
-    port.postMessage({ type: 'requestViaSAB_CBOR' });
+    port.postMessage({ type: 'port_sab__cbor' });
     Atomics.wait(accessor, 0, 0);
-    let length = binaryView[0];
-    let subarray = binaryView.slice(1, length + 1);
+    let length = binaryView[4];
+    let subarray = binaryView.slice(5, length + 5);
     return CBOR.decode(subarray);
   }
 
-  console.log('requestViaPort', await requestViaPort());
-  console.log('requestViaSAB_structured', requestViaSAB_structured());
-  console.log('requestViaSAB_CBOR', requestViaSAB_CBOR());
+  console.log('port_port__structured', await port_port__structured());
+  console.log('port_sab__custom', port_sab__custom());
+  console.log('port_sab__cbor', port_sab__cbor());
 
-  let bench = new Bench()
-    .add('requestViaPort', async () => {
-      await requestViaPort();
+  let bench1 = new Bench()
+    .add('port_port__structured', async () => {
+      await port_port__structured();
     })
-    .add('requestViaSAB_structured', () => {
-      requestViaSAB_structured();
+    .add('port_sab__custom', () => {
+      port_sab__custom();
     })
-    .add('requestViaSAB_CBOR', () => {
-      requestViaSAB_CBOR();
+    .add('port_sab__cbor', () => {
+      port_sab__cbor();
     });
 
+  await bench1.run();
+  console.table(bench1.table());
 
-  await bench.run();
-  console.table(bench.table());
+  console.log('Then, run seperated suite for fully blocking communication');
+
+  function sab_sab__custom() {
+    Atomics.store(accessor, 0, -1);
+    Atomics.notify(accessor, 0);
+    Atomics.wait(accessor, 0, -1);
+    return {
+      x: accessor[1],
+      y: accessor[2],
+      width: accessor[3],
+      height: accessor[4],
+      left: accessor[5],
+      right: accessor[6],
+      top: accessor[7],
+      bottom: accessor[8],
+    };
+  }
+
+  function sab_sab__cbor() {
+    Atomics.store(accessor, 0, -2);
+    Atomics.notify(accessor, 0);
+    Atomics.wait(accessor, 0, -2);
+    let length = binaryView[4];
+    let subarray = binaryView.slice(5, length + 5);
+    return CBOR.decode(subarray);
+  }
+
+  port.postMessage({ type: 'blocking_start' });
+  Atomics.store(accessor, 0, 0);
+  Atomics.wait(accessor, 0);
+
+  console.log('sab_sab__custom', sab_sab__custom());
+  console.log('sab_sab__cbor', sab_sab__cbor());
+
+  let bench2 = new Bench()
+    .add('sab_sab__custom', () => {
+      sab_sab__custom();
+    })
+    .add('sab_sab__cbor', () => {
+      sab_sab__cbor();
+    });
+
+  await bench2.run();
+  console.table(bench2.table());
+
+  // terminate loop
+  Atomics.store(accessor, 0, -99);
+  Atomics.notify(accessor, 0);
 }

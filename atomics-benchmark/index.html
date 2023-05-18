@@ -8,16 +8,11 @@
   <body>
     <div id="root">
       <iframe id="child" src="http://localhost:9000/child.html"></iframe>
-
-      <div id="target" style="width: 100px; height: 100px; background-color: gray;">
-        Sized Box
-      </div>
     </div>
     <script type="module">
       import * as CBOR from '/node_modules/cbor-x/index.js';
 
       let $child = document.getElementById('child');
-      let $target = document.getElementById('target');
       let channel = new MessageChannel();
       let sab = new SharedArrayBuffer(4 * 1024);
       let accessor = new Int32Array(sab);
@@ -29,35 +24,90 @@
           return;
         }
 
-        if (e.data.type === 'requestViaPort') {
+        if (e.data.type === 'port_port__structured') {
           let reqId = e.data.reqId;
-          let result = $target.getBoundingClientRect().toJSON();
+          let result = document.body.getBoundingClientRect().toJSON();
           channel.port1.postMessage({ type: 'resolve', reqId, result });
           return;
         }
 
-        if (e.data.type === 'requestViaSAB_structured') {
-          let result = $target.getBoundingClientRect();
-          accessor[0] = result.x;
-          accessor[1] = result.y;
-          accessor[2] = result.width;
-          accessor[3] = result.height;
-          accessor[4] = result.left;
-          accessor[5] = result.right;
-          accessor[6] = result.top;
-          accessor[7] = result.bottom;
+        if (e.data.type === 'port_sab__custom') {
+          let result = document.body.getBoundingClientRect();
+          accessor[1] = result.x;
+          accessor[2] = result.y;
+          accessor[3] = result.width;
+          accessor[4] = result.height;
+          accessor[5] = result.left;
+          accessor[6] = result.right;
+          accessor[7] = result.top;
+          accessor[8] = result.bottom;
+          Atomics.store(accessor, 0, 1 /* success */);
           Atomics.notify(accessor, 0);
+          return;
         }
         
-        if (e.data.type === 'requestViaSAB_CBOR') {
-          let result = $target.getBoundingClientRect().toJSON();
+        if (e.data.type === 'port_sab__cbor') {
+          let result = document.body.getBoundingClientRect().toJSON();
           let binary = CBOR.encode(result);
           let binaryLength = binary.length;
-          binaryView[0] = binaryLength;
-          for (let i = 0, len = binary.length; i < len; ++i) {
-            binaryView[i + 1] = binary[i];
+          binaryView[4] = binaryLength;
+          for (let i = 0; i < binaryLength; ++i) {
+            binaryView[i + 5] = binary[i];
           }
+          Atomics.store(accessor, 0, 1 /* success */);
           Atomics.notify(accessor, 0);
+          return;
+        }
+
+        if (e.data.type === 'blocking_start') {
+          (async () => {
+            console.log('blocking loop started');
+            Atomics.store(accessor, 0, 0);
+            Atomics.notify(accessor, 0);
+
+            let done = false;
+            while (!done) {
+              Atomics.store(accessor, 0, 0);
+              let result = Atomics.waitAsync(accessor, 0, 0);
+              await result.value;
+
+              let code = accessor[0];
+
+              switch (code) {
+                case -1 /* sab_sab__custom */: {
+                  let result = document.body.getBoundingClientRect();
+                  accessor[1] = result.x;
+                  accessor[2] = result.y;
+                  accessor[3] = result.width;
+                  accessor[4] = result.height;
+                  accessor[5] = result.left;
+                  accessor[6] = result.right;
+                  accessor[7] = result.top;
+                  accessor[8] = result.bottom;
+                  Atomics.store(accessor, 0, 1 /* success */);
+                  Atomics.notify(accessor, 0);
+                  break;
+                }
+                case -2 /* sab_sab__cbor */: {
+                  let result = document.body.getBoundingClientRect().toJSON();
+                  let binary = CBOR.encode(result);
+                  let binaryLength = binary.length;
+                  binaryView[4] = binaryLength;
+                  for (let i = 0; i < binaryLength; ++i) {
+                    binaryView[i + 5] = binary[i];
+                  }
+                  Atomics.store(accessor, 0, 1 /* success */);
+                  Atomics.notify(accessor, 0);
+                  break;
+                }
+                case -99: {
+                  done = true;
+                  break;
+                }
+              }
+            }
+            console.log('blocking loop terminated');
+          })();
           return;
         }
       };
