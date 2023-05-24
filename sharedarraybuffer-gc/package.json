@@ -1,0 +1,10 @@
+{
+  "name": "sharedarraybuffer-gc",
+  "private": true,
+  "scripts": {
+    "start": "serve-isolated --port 8000"
+  },
+  "dependencies": {
+    "serve-isolated": "^1.2.0"
+  }
+}

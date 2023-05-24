@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SharedArrayBuffer GC test</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module">
+      let registry = new FinalizationRegistry(v => {
+        console.log('Just finalized ', v);
+      });
+
+      let sab = new SharedArrayBuffer(4 * 1024 * 1024);
+      let growableSab = new SharedArrayBuffer(0, { maxByteLength: 4 * 1024 * 1024 });
+
+      registry.register(sab, "sab");
+      registry.register(growableSab, "growable sab");
+
+      let worker = new Worker('worker.js', { type: 'module' });
+      worker.postMessage({ sab });
+      worker.postMessage({ sab: growableSab });
+
+      (function() {
+        console.log("grow sab");
+        growableSab.grow(4 * 1024 * 1024);
+
+        registry.register({}, "tmp");
+      })();
+    </script>
+  </body>
+</html>
