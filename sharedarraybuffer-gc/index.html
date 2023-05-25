@@ -22,12 +22,12 @@
       worker.postMessage({ sab });
       worker.postMessage({ sab: growableSab });
 
-      (function() {
+      // Don't use hardcoded reference capture
+      // See https://bugs.chromium.org/p/chromium/issues/detail?id=1448423
+      (function(growableSab) {
         console.log("grow sab");
         growableSab.grow(4 * 1024 * 1024);
-
-        registry.register({}, "tmp");
-      })();
+      })(growableSab);
     </script>
   </body>
 </html>
